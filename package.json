@@ -1,0 +1,41 @@
+{
+  "name": "@pubpub/prosemirror-reactive",
+  "version": "0.0.1",
+  "description": "Use reactive, stateful nodes in Prosemirror",
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@types/jest": "^24.0.18",
+    "@types/node": "^12.7.4",
+    "@types/prosemirror-model": "^1.7.2",
+    "@types/prosemirror-view": "^1.15.0",
+    "@typescript-eslint/eslint-plugin": "^2.19.2",
+    "@typescript-eslint/parser": "^2.19.2",
+    "eslint": "^6.0.1",
+    "eslint-config-prettier": "^6.0.0",
+    "eslint-plugin-prettier": "^3.1.0",
+    "esm": "^3.2.25",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.5.3"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "tsc",
+    "lint": "eslint 'src/**/*.ts'",
+    "prepublishOnly": "npm run lint && npm test && npm run build",
+    "convert": "ts-node src/example/convert.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pubpub/prosemirror-reactive.git"
+  },
+  "author": "Ian Reynolds",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pubpub/prosemirror-reactive/issues"
+  },
+  "homepage": "https://github.com/pubpub/prosemirror-reactive#readme",
+  "dependencies": {}
+}
