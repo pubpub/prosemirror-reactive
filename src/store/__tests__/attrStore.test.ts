@@ -1,25 +1,24 @@
 /* global it, expect, jest */
 import { Node } from "prosemirror-model";
 
+import { createSchema, greeter } from "../../examples/schemas";
 import { AttrStore } from "../attrStore";
 
 jest.useFakeTimers();
 
-const testNode = ({
-    attrs: {
-        greeting: "Good morning!",
-    },
-} as unknown) as Node;
+const schema = createSchema({ greeter });
+
+const testNode = Node.fromJSON(schema, { type: "greeter", attrs: { name: "world" } });
 
 const createTestStore = (fn, globalHooks = {}, onInvalidate?) =>
     new AttrStore("anything", fn, globalHooks, onInvalidate);
 
 it("runs an attr that can access the current Node value", () => {
     const attr = createTestStore(function stateCell(node) {
-        return node.attrs.greeting;
+        return `Hello, ${node.attrs.name}!`;
     });
     const result = attr.run(testNode);
-    expect(result).toEqual("Good morning!");
+    expect(result).toEqual("Hello, world!");
 });
 
 it("runs an attr that can access the current global hooks", () => {

@@ -98,6 +98,13 @@ export class NodeStore {
         });
     }
 
+    /**
+     * Get the reactive copy of the Node computed by this store.
+     */
+    get(): Node {
+        return this.reactiveShadow;
+    }
+
     destroy() {
         Object.values(this.attrStores).forEach(store => store.destroy());
     }

@@ -17,21 +17,46 @@ type Range = [number, number];
 type RangeMap = Record<NodeId, Range>;
 type InvalidateNodeId = (nodeId: NodeId) => void;
 
+const isValidReactiveFn = fn => {
+    // Arrow functions have no prototype, and we need non-arrows so we can bind `this` to them.
+    // eslint-disable-next-line no-prototype-builtins
+    return typeof fn === "function" && fn.hasOwnProperty("prototype");
+};
+
 const assertCanCreateReactiveNodeStore = (
     nodeType: string,
     spec: ReactiveNodeSpec,
     idAttrKey: string
 ) => {
-    const specHasReactiveAttrs = Object.values(spec.attrs).some(attrSpec => attrSpec.reactive);
-    const specHasCorrectIdAttr = spec.attrs[idAttrKey] && !spec.attrs[idAttrKey].reactive;
-    if (!specHasReactiveAttrs) {
+    const { attrs, reactiveAttrs } = spec;
+    const hasIdAttr = attrs[idAttrKey];
+    if (hasIdAttr) {
+        const hasReactiveAttrs = reactiveAttrs && Object.keys(reactiveAttrs).length > 0;
+        if (hasReactiveAttrs) {
+            const attrWithWrongType = Object.entries(reactiveAttrs).find(
+                entry => !isValidReactiveFn(entry[1])
+            );
+            if (attrWithWrongType) {
+                throwError(
+                    `Reactive attr ${attrWithWrongType} on ${nodeType} must be a (non-arrow) function`
+                );
+            }
+            const reactiveAttrShadowingAttr = Object.keys(reactiveAttrs).find(
+                attr => !!attrs[attr]
+            );
+            if (reactiveAttrShadowingAttr) {
+                throwError(
+                    `Reactive attr ${reactiveAttrShadowingAttr} cannot be defined in both 'attrs' and 'reactiveAttrs'`
+                );
+            }
+        } else {
+            throwError(
+                `Reactive node definition for ${nodeType} must have one or more 'reactiveAttrs'`
+            );
+        }
+    } else {
         throwError(
-            `Reactive node definition for ${nodeType} should have a reactive attr (i.e. an attr definition with a 'reactive' key)`
-        );
-    }
-    if (!specHasCorrectIdAttr) {
-        throwError(
-            `Reactive node definition for ${nodeType} must have an ID attr called ${idAttrKey} that is non-reactive.`
+            `Reactive node definition for ${nodeType} must have an ID attr called ${idAttrKey}`
         );
     }
 };
@@ -40,14 +65,15 @@ interface ConstructorArgs {
     nodeSpecs: Record<string, NodeType>;
     idAttrKey?: string;
     invalidateNodeId?: InvalidateNodeId;
+    availableNodes?: Record<NodeId, Node>;
 }
 
 export class ReactiveStore {
-    private reactiveAttrDefinitions: Record<AttrKey, ReactiveAttrsDefinition> = {};
+    private reactiveAttrsDefinitions: Record<AttrKey, ReactiveAttrsDefinition> = {};
+    private nodeStores: Record<NodeId, NodeStore> = {};
+    private availableNodes: Record<NodeId, Node>;
     private documentState: ReactiveMap = new ReactiveMap();
     private transactionState: ReactiveMap;
-    private availableNodes: Record<NodeId, Node> = {};
-    private nodeStores: Record<NodeId, NodeStore> = {};
     private idAttrKey: AttrKey;
     private invalidateNodeId: InvalidateNodeId;
 
@@ -56,12 +82,23 @@ export class ReactiveStore {
         useTransactionState: () => this.transactionState,
         useDeferredNode: (nodeIds, callback) =>
             new DeferredResult(nodeIds, (nodesById: Record<NodeId, Node>) => {
-                const resolvedNodes = nodeIds.map(id => nodesById[id]);
-                return callback(nodeIds instanceof Array ? resolvedNodes : resolvedNodes[0]);
+                const resolvedNodes = [];
+                if (Array.isArray(nodeIds)) {
+                    nodeIds.forEach(id => resolvedNodes.push(nodesById[id]));
+                } else {
+                    resolvedNodes.push(nodesById[nodeIds]);
+                }
+                return callback(...resolvedNodes);
             }),
     };
 
-    constructor({ nodeSpecs, idAttrKey = "id", invalidateNodeId }: ConstructorArgs) {
+    constructor({
+        nodeSpecs,
+        idAttrKey = "id",
+        invalidateNodeId,
+        availableNodes = {},
+    }: ConstructorArgs) {
+        this.availableNodes = availableNodes;
         this.onInvalidateNode = this.onInvalidateNode.bind(this);
         this.idAttrKey = idAttrKey;
         this.invalidateNodeId = invalidateNodeId;
@@ -76,14 +113,7 @@ export class ReactiveStore {
             if (spec.reactive) {
                 const reactiveSpec = spec as ReactiveNodeSpec;
                 assertCanCreateReactiveNodeStore(name, reactiveSpec, this.idAttrKey);
-                const definition: ReactiveAttrsDefinition = {};
-                Object.entries(reactiveSpec.attrs).forEach(([attr, definition]) => {
-                    const { reactive } = definition;
-                    if (reactive) {
-                        definition[attr] = reactive;
-                    }
-                });
-                this.reactiveAttrDefinitions[name] = definition;
+                this.reactiveAttrsDefinitions[name] = reactiveSpec;
             }
         });
     }
@@ -98,7 +128,7 @@ export class ReactiveStore {
             if (existingStore) {
                 return existingStore;
             }
-            const reactiveDefinition = this.reactiveAttrDefinitions[name];
+            const reactiveDefinition = this.reactiveAttrsDefinitions[name];
             const createdStore = new NodeStore(id, reactiveDefinition, this);
             return createdStore;
         }

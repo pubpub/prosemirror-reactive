@@ -1,4 +1,4 @@
-import { Node, NodeSpec, AttributeSpec } from "prosemirror-model";
+import { Node, NodeSpec } from "prosemirror-model";
 
 import { DeferredResult } from "./deferredResult";
 
@@ -18,11 +18,7 @@ export type ReactiveNodeUpdateResult = ReactiveNodeUpdate | DeferredResult<React
 
 export type Hooks = Record<string, Function>;
 
-export interface ReactiveAttrSpec extends AttributeSpec {
-    reactive: ReactiveAttrFn;
-}
-
 export interface ReactiveNodeSpec extends NodeSpec {
-    reactive: true;
-    attrs: Record<string, ReactiveAttrSpec>;
+    reactive?: true;
+    reactiveAttrs?: Record<string, ReactiveAttrFn>;
 }
