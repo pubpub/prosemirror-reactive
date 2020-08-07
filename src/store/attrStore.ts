@@ -5,9 +5,11 @@ import { warn, throwError } from "./util";
 
 type UninitializedCell = [];
 type Cell = UninitializedCell | [number, any[]];
-type StateUpdater<T> = (arg: T | ((curr: T) => T)) => void;
 type State<T> = [T, StateUpdater<T>];
-type Effect = null | [any[], () => any];
+type Effect = [any[], () => any];
+type Ref = { current: any };
+
+type StateUpdater<T> = (arg: T | ((curr: T) => T)) => void;
 type EffectCallback = () => () => any;
 type OnInvalidate = (attr: string) => void;
 
@@ -88,6 +90,14 @@ const hookFactories = {
                 contents[1] = teardown;
             });
             return contents;
+        };
+    },
+    useRef: () => {
+        return function useRef(this: Ref, initialValue: any) {
+            if (this) {
+                return this;
+            }
+            return { current: initialValue };
         };
     },
 };

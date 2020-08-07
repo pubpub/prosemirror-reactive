@@ -42,6 +42,20 @@ it("runs an attr with a useState call", () => {
     expect(result).toEqual("hello!");
 });
 
+it("runs an attr with a useRef call", () => {
+    const attr = createTestStore(function stateCell() {
+        const { useRef } = this;
+        const count = useRef(-1);
+        count.current += 1;
+        return count.current;
+    });
+
+    for (let i = 0; i < 10; i++) {
+        const result = attr.run(testNode);
+        expect(result).toEqual(i);
+    }
+});
+
 it("runs an attr with a useState and a useEffect call", () => {
     const attr = createTestStore(function stateCell() {
         const { useState, useEffect } = this;
