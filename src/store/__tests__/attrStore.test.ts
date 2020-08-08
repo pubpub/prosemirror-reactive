@@ -61,7 +61,7 @@ it("runs an attr with a useState and a useEffect call", () => {
         const { useState, useEffect } = this;
         const [count, setCount] = useState(0);
 
-        // In a ReactiveStore this would trigger an infinite loop
+        // In a DocumentStore this would trigger an infinite loop
         useEffect(() => setCount(oldCount => oldCount + 1));
 
         return count;

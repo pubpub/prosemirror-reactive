@@ -29,7 +29,7 @@ const assertCanCreateReactiveNodeStore = (
     idAttrKey: string
 ) => {
     const { attrs, reactiveAttrs } = spec;
-    const hasIdAttr = attrs[idAttrKey];
+    const hasIdAttr = attrs && attrs[idAttrKey];
     if (hasIdAttr) {
         const hasReactiveAttrs = reactiveAttrs && Object.keys(reactiveAttrs).length > 0;
         if (hasReactiveAttrs) {
@@ -68,7 +68,7 @@ interface ConstructorArgs {
     availableNodes?: Record<NodeId, Node>;
 }
 
-export class ReactiveStore {
+export class DocumentStore {
     private reactiveAttrsDefinitions: Record<AttrKey, ReactiveAttrsDefinition> = {};
     private nodeStores: Record<NodeId, NodeStore> = {};
     private availableNodes: Record<NodeId, Node>;
@@ -78,8 +78,8 @@ export class ReactiveStore {
     private invalidateNodeId: InvalidateNodeId;
 
     private hooks = {
-        useDocumentState: () => this.documentState,
-        useTransactionState: () => this.transactionState,
+        useDocumentState: (...args) => this.documentState.get(...args),
+        useTransactionState: (...args) => this.transactionState.get(...args),
         useDeferredNode: (nodeIds, callback) =>
             new DeferredResult(nodeIds, (nodesById: Record<NodeId, Node>) => {
                 const resolvedNodes = [];
@@ -113,7 +113,7 @@ export class ReactiveStore {
             if (spec.reactive) {
                 const reactiveSpec = spec as ReactiveNodeSpec;
                 assertCanCreateReactiveNodeStore(name, reactiveSpec, this.idAttrKey);
-                this.reactiveAttrsDefinitions[name] = reactiveSpec;
+                this.reactiveAttrsDefinitions[name] = reactiveSpec.reactiveAttrs;
             }
         });
     }
@@ -130,6 +130,7 @@ export class ReactiveStore {
             }
             const reactiveDefinition = this.reactiveAttrsDefinitions[name];
             const createdStore = new NodeStore(id, reactiveDefinition, this);
+            this.nodeStores[id] = createdStore;
             return createdStore;
         }
         return null;
@@ -156,13 +157,16 @@ export class ReactiveStore {
     }
 
     /**
-     * Get a reacted node by its ID. If `run` has not been called, or the node in question does not
-     * exist or is not reactive, this will return `null`.
+     * Get a reacted copy of a given node. If `run` has not been called, or the node in question
+     * does not exist or is not reactive, this will return `null`.
      * @param nodeId
      */
-    getReactedNode(nodeId: NodeId) {
-        if (this.nodeStores[nodeId]) {
-            return this.availableNodes[nodeId];
+    getReactedCopy(node: Node) {
+        if (node.attrs) {
+            const { [this.idAttrKey]: nodeId } = node.attrs;
+            if (this.nodeStores[nodeId]) {
+                return this.availableNodes[nodeId];
+            }
         }
         return null;
     }
@@ -209,7 +213,7 @@ export class ReactiveStore {
         // Record all notes that are invalidated and need to be redrawn.
         const invalidatedNodeIds = [];
         for (const id in seenNodesById) {
-            const node = seenNodesById[id][0];
+            const node = seenNodesById[id];
             const store = this.getStoreForNode(node);
             if (store) {
                 const nodeResult = store.run(node);

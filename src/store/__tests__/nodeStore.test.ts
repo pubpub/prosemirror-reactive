@@ -14,7 +14,7 @@ import {
     sheepNamer,
 } from "../../examples/schemas";
 import { Node } from "prosemirror-model";
-import { ReactiveStore } from "../reactiveStore";
+import { DocumentStore } from "../documentStore";
 import { NodeStore } from "../nodeStore";
 import { ReactiveNodeUpdate } from "../types";
 import { DeferredResult } from "../deferredResult";
@@ -32,9 +32,9 @@ const schema = createSchema({
     sheepNamer,
 });
 
-const reactiveStore = new ReactiveStore({ nodeSpecs: schema.nodes });
+const documentStore = new DocumentStore({ nodeSpecs: schema.nodes });
 
-const createStore = (node, parentStore = reactiveStore) =>
+const createStore = (node, parentStore = documentStore) =>
     new NodeStore(node.attrs.id || "whatever", node.type.spec.reactiveAttrs, parentStore);
 
 jest.useFakeTimers();
@@ -152,7 +152,7 @@ it("computes change values correctly across DeferredValue boundaries", () => {
 it("correctly invalidates nodes when their values change", () => {
     const invalidate = jest.fn();
 
-    const rs = new ReactiveStore({
+    const rs = new DocumentStore({
         nodeSpecs: schema.nodes,
         invalidateNodeId: invalidate,
     });
@@ -183,8 +183,8 @@ it("correctly invalidates nodes when their values change", () => {
     expect(invalidate).toHaveBeenNthCalledWith(5, "awake");
     expect(invalidate).toHaveBeenNthCalledWith(6, "sleepy");
 
-    expect(awakeStore.get().attrs.report).toEqual("I have counted 4 sheep");
-    expect(sleepyStore.get().attrs.report).toEqual("I have counted 2 sheep");
+    expect(awakeStore.getReactiveCopy().attrs.report).toEqual("I have counted 4 sheep");
+    expect(sleepyStore.getReactiveCopy().attrs.report).toEqual("I have counted 2 sheep");
 });
 
 it("correctly invalidates nodes when their values change across a DeferredValue boundary", () => {
@@ -205,7 +205,7 @@ it("correctly invalidates nodes when their values change across a DeferredValue 
         }),
     };
 
-    const rs = new ReactiveStore({
+    const rs = new DocumentStore({
         nodeSpecs: schema.nodes,
         invalidateNodeId: invalidate,
         availableNodes: { ...sheep },
@@ -220,13 +220,13 @@ it("correctly invalidates nodes when their values change across a DeferredValue 
 
     jest.advanceTimersToNextTimer();
     expect(invalidate).toHaveBeenCalledTimes(1);
-    expect(store.get().attrs.report).toEqual("Sheep 1 is named Shelly");
+    expect(store.getReactiveCopy().attrs.report).toEqual("Sheep 1 is named Shelly");
 
     jest.advanceTimersToNextTimer();
     expect(invalidate).toHaveBeenCalledTimes(2);
-    expect(store.get().attrs.report).toEqual("Sheep 2 is named Sharon");
+    expect(store.getReactiveCopy().attrs.report).toEqual("Sheep 2 is named Sharon");
 
     jest.advanceTimersToNextTimer();
     expect(invalidate).toHaveBeenCalledTimes(3);
-    expect(store.get().attrs.report).toEqual("I don't see any more sheep");
+    expect(store.getReactiveCopy().attrs.report).toEqual("I don't see any more sheep");
 });

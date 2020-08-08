@@ -11,7 +11,7 @@ import {
 } from "./types";
 import { AttrStore } from "./attrStore";
 import { DeferredResult, DeferredResultCallback } from "./deferredResult";
-import { ReactiveStore } from "./reactiveStore";
+import { DocumentStore } from "./documentStore";
 
 type DeferredAttrResults = Record<AttrKey, DeferredResult<ReactiveAttrValue>>;
 
@@ -19,12 +19,12 @@ type DeferredAttrResults = Record<AttrKey, DeferredResult<ReactiveAttrValue>>;
  * A NodeStore contains stateful information about a Prosemirror node. It keeps no reference to
  * any `Node` object found in a document (which are transient and disposable anyway) and is intended
  * intended to be mapped by its caller to a stable node ID. This class is intended to be
- * instantiated by `ReactiveStore`.
+ * instantiated by `DocumentStore`.
  */
 export class NodeStore {
-    private parentStore: ReactiveStore;
+    private parentStore: DocumentStore;
     private nodeId: NodeId;
-    private reactiveShadow: Node;
+    private reactiveCopy: Node;
     private attrStores: Record<AttrKey, AttrStore> = {};
     private attrStates: Record<AttrKey, ReactiveAttrValue> = {};
 
@@ -33,7 +33,7 @@ export class NodeStore {
      * @param definition a set of `Node` attributes associated with hooks that will be used to
      *   derive their values.
      */
-    constructor(nodeId: NodeId, definition: ReactiveAttrsDefinition, parentStore: ReactiveStore) {
+    constructor(nodeId: NodeId, definition: ReactiveAttrsDefinition, parentStore: DocumentStore) {
         this.nodeId = nodeId;
         this.parentStore = parentStore;
         this.invalidateAttr = this.invalidateAttr.bind(this);
@@ -50,7 +50,7 @@ export class NodeStore {
     }
 
     private invalidateAttr(attr: AttrKey) {
-        const possiblyDeferredResult = this.attrStores[attr].run(this.reactiveShadow);
+        const possiblyDeferredResult = this.attrStores[attr].run(this.reactiveCopy);
         const result =
             possiblyDeferredResult instanceof DeferredResult
                 ? possiblyDeferredResult.callback(this.parentStore.getAvailableNodes())
@@ -61,16 +61,16 @@ export class NodeStore {
         }
     }
 
-    private updateReactiveClone(node: Node) {
-        this.reactiveShadow = node.copy();
-        this.reactiveShadow.attrs = { ...this.reactiveShadow.attrs, ...this.attrStates };
+    private updateReactiveCopy(node: Node) {
+        this.reactiveCopy = node.copy();
+        this.reactiveCopy.attrs = { ...this.reactiveCopy.attrs, ...this.attrStates };
     }
 
     private updateAttrState(attr: AttrKey, value: ReactiveAttrValue): boolean {
         const previous = this.attrStates[attr];
         const attrChanged = value !== previous;
         this.attrStates[attr] = value;
-        this.reactiveShadow.attrs[attr] = value;
+        this.reactiveCopy.attrs[attr] = value;
         return attrChanged;
     }
 
@@ -94,15 +94,15 @@ export class NodeStore {
                 const hasAttrChanged = this.updateAttrState(attr, nextValue);
                 hasNodeChanged = hasNodeChanged || hasAttrChanged;
             }
-            return [hasNodeChanged, this.reactiveShadow];
+            return [hasNodeChanged, this.reactiveCopy];
         });
     }
 
     /**
      * Get the reactive copy of the Node computed by this store.
      */
-    get(): Node {
-        return this.reactiveShadow;
+    getReactiveCopy(): Node {
+        return this.reactiveCopy;
     }
 
     destroy() {
@@ -118,7 +118,7 @@ export class NodeStore {
      * @param transactionState Global, mutable state for the current transaction
      */
     run(node: Node): ReactiveNodeUpdateResult {
-        this.updateReactiveClone(node);
+        this.updateReactiveCopy(node);
         const results: Record<AttrKey, ReactiveAttrUpdateResult> = {};
         for (const key in this.attrStores) {
             const store = this.attrStores[key];
@@ -138,7 +138,7 @@ export class NodeStore {
         if (Object.keys(deferredResults).length > 0) {
             return this.getDeferredResult(hasNodeChanged, deferredResults);
         } else {
-            return [hasNodeChanged, this.reactiveShadow];
+            return [hasNodeChanged, this.reactiveCopy];
         }
     }
 }
