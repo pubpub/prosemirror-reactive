@@ -22,8 +22,7 @@ class ReactiveNodeView {
         this.contentDOM = contentDOM;
     }
 
-    update(node: Node) {
-        this.render(node);
+    update() {
         return false;
     }
 }

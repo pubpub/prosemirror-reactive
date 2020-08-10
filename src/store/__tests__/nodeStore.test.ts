@@ -35,7 +35,7 @@ const schema = createSchema({
 const documentStore = new DocumentStore({ nodeSpecs: schema.nodes });
 
 const createStore = (node, parentStore = documentStore) =>
-    new NodeStore(node.attrs.id || "whatever", node.type.spec.reactiveAttrs, parentStore);
+    new NodeStore(node.type.spec.reactiveAttrs, parentStore);
 
 jest.useFakeTimers();
 
@@ -154,7 +154,7 @@ it("correctly invalidates nodes when their values change", () => {
 
     const rs = new DocumentStore({
         nodeSpecs: schema.nodes,
-        invalidateNodeId: invalidate,
+        invalidateNode: invalidate,
     });
 
     const awake = Node.fromJSON(schema, { type: "sheepCounter", attrs: { skip: 1, id: "awake" } });
@@ -207,7 +207,7 @@ it("correctly invalidates nodes when their values change across a DeferredValue 
 
     const rs = new DocumentStore({
         nodeSpecs: schema.nodes,
-        invalidateNodeId: invalidate,
+        invalidateNode: invalidate,
         availableNodes: { ...sheep },
     });
 

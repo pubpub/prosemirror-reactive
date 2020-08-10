@@ -1,1 +1,1 @@
-export { createReactivePlugin } from "./plugin";
+export { createReactivePlugin, getReactedCopyOfNode } from "./plugin";

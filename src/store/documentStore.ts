@@ -11,60 +11,16 @@ import {
 import { ReactiveMap } from "./reactiveMap";
 import { NodeStore } from "./nodeStore";
 import { DeferredResult } from "./deferredResult";
-import { throwError } from "./util";
+import { assertCanCreateReactiveNodeStore } from "./util";
 
 type Range = [number, number];
 type RangeMap = Record<NodeId, Range>;
-type InvalidateNodeId = (nodeId: NodeId) => void;
-
-const isValidReactiveFn = fn => {
-    // Arrow functions have no prototype, and we need non-arrows so we can bind `this` to them.
-    // eslint-disable-next-line no-prototype-builtins
-    return typeof fn === "function" && fn.hasOwnProperty("prototype");
-};
-
-const assertCanCreateReactiveNodeStore = (
-    nodeType: string,
-    spec: ReactiveNodeSpec,
-    idAttrKey: string
-) => {
-    const { attrs, reactiveAttrs } = spec;
-    const hasIdAttr = attrs && attrs[idAttrKey];
-    if (hasIdAttr) {
-        const hasReactiveAttrs = reactiveAttrs && Object.keys(reactiveAttrs).length > 0;
-        if (hasReactiveAttrs) {
-            const attrWithWrongType = Object.entries(reactiveAttrs).find(
-                entry => !isValidReactiveFn(entry[1])
-            );
-            if (attrWithWrongType) {
-                throwError(
-                    `Reactive attr ${attrWithWrongType} on ${nodeType} must be a (non-arrow) function`
-                );
-            }
-            const reactiveAttrShadowingAttr = Object.keys(reactiveAttrs).find(
-                attr => !!attrs[attr]
-            );
-            if (reactiveAttrShadowingAttr) {
-                throwError(
-                    `Reactive attr ${reactiveAttrShadowingAttr} cannot be defined in both 'attrs' and 'reactiveAttrs'`
-                );
-            }
-        } else {
-            throwError(
-                `Reactive node definition for ${nodeType} must have one or more 'reactiveAttrs'`
-            );
-        }
-    } else {
-        throwError(
-            `Reactive node definition for ${nodeType} must have an ID attr called ${idAttrKey}`
-        );
-    }
-};
+type InvalidateNode = (node: Node) => void;
 
 interface ConstructorArgs {
     nodeSpecs: Record<string, NodeType>;
     idAttrKey?: string;
-    invalidateNodeId?: InvalidateNodeId;
+    invalidateNode?: InvalidateNode;
     availableNodes?: Record<NodeId, Node>;
 }
 
@@ -75,7 +31,7 @@ export class DocumentStore {
     private documentState: ReactiveMap = new ReactiveMap();
     private transactionState: ReactiveMap;
     private idAttrKey: AttrKey;
-    private invalidateNodeId: InvalidateNodeId;
+    private invalidateNode: InvalidateNode;
 
     private hooks = {
         useDocumentState: (...args) => this.documentState.get(...args),
@@ -95,13 +51,13 @@ export class DocumentStore {
     constructor({
         nodeSpecs,
         idAttrKey = "id",
-        invalidateNodeId,
+        invalidateNode,
         availableNodes = {},
     }: ConstructorArgs) {
+        this.invalidateNode = invalidateNode;
         this.availableNodes = availableNodes;
         this.onInvalidateNode = this.onInvalidateNode.bind(this);
         this.idAttrKey = idAttrKey;
-        this.invalidateNodeId = invalidateNodeId;
         this.createReactiveAttrDefinitions(nodeSpecs);
     }
 
@@ -129,7 +85,7 @@ export class DocumentStore {
                 return existingStore;
             }
             const reactiveDefinition = this.reactiveAttrsDefinitions[name];
-            const createdStore = new NodeStore(id, reactiveDefinition, this);
+            const createdStore = new NodeStore(reactiveDefinition, this);
             this.nodeStores[id] = createdStore;
             return createdStore;
         }
@@ -140,11 +96,11 @@ export class DocumentStore {
      * Tell the caller that a node has invalidated, and needs to be redrawn. This is typically
      * called outside the Prosemirror transaction lifecycle when an attr updates from within via a
      * `useState` update.
-     * @param nodeId
+     * @param node
      */
-    onInvalidateNode(nodeId: NodeId) {
-        if (this.invalidateNodeId) {
-            this.invalidateNodeId(nodeId);
+    onInvalidateNode(node: Node) {
+        if (this.onInvalidateNode) {
+            this.invalidateNode(node);
         }
     }
 
@@ -176,6 +132,21 @@ export class DocumentStore {
      */
     getHooks(): Hooks {
         return this.hooks;
+    }
+
+    /**
+     * Returns `true` if the two nodes have the same value for `idAttrKey`.
+     * @param a
+     * @param b
+     */
+    compareNodesById(a: Node, b: Node) {
+        return (
+            a.attrs &&
+            b.attrs &&
+            a.attrs[this.idAttrKey] &&
+            b.attrs[this.idAttrKey] &&
+            a.attrs[this.idAttrKey] === b.attrs[this.idAttrKey]
+        );
     }
 
     /**
@@ -262,12 +233,12 @@ export class DocumentStore {
         this.availableNodes = availableNodesById;
 
         // Destroy the store for any reactive node that has disappeared from the doc.
-        for (const storeId in this.nodeStores) {
-            if (!this.availableNodes[storeId]) {
-                this.nodeStores[storeId].destroy();
-                delete this.nodeStores[storeId];
-            }
-        }
+        // for (const storeId in this.nodeStores) {
+        //     if (!this.availableNodes[storeId]) {
+        //         this.nodeStores[storeId].destroy();
+        //         delete this.nodeStores[storeId];
+        //     }
+        // }
 
         // Finally, tell the caller about every invalidated node we saw.
         const invalidationMap: RangeMap = {};

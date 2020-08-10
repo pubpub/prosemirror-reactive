@@ -1,3 +1,4 @@
+import { Node } from "prosemirror-model";
 import { Plugin, EditorState, Transaction } from "prosemirror-state";
 import { EditorView, DecorationSet, Decoration } from "prosemirror-view";
 
@@ -11,24 +12,24 @@ import { createReactiveNodeViews } from "./nodeViews";
 const createReactiveDecorationForNode = (from, to, cycleId, count) =>
     Decoration.node(from, to, {}, { "reactive-update": `${cycleId}-${count}` });
 
-export const createReactivePlugin = ({ idAttrKey = "id", schema }: PluginArgs) => {
+export const createReactivePlugin = ({ idAttrKey, schema }: PluginArgs) => {
     let editorView: EditorView = null;
 
-    const getInvalidatedNodeId = (transaction: Transaction) => {
+    const getInvalidatedNode = (transaction: Transaction): Node => {
         const reactiveTransaction = transaction.getMeta(reactivePluginKey);
         if (reactiveTransaction) {
-            const { invalidateNodeId } = reactiveTransaction;
-            if (invalidateNodeId) {
-                return invalidateNodeId;
+            const { invalidatedNode } = reactiveTransaction;
+            if (invalidatedNode) {
+                return invalidatedNode;
             }
         }
         return null;
     };
 
-    const dispatchNodeInvalidateTransaction = nodeId => {
+    const invalidateNode = (node: Node) => {
         if (editorView) {
             const transaction = editorView.state.tr;
-            transaction.setMeta(reactivePluginKey, { invalidateNodeId: nodeId });
+            transaction.setMeta(reactivePluginKey, { invalidatedNode: node });
             editorView.dispatch(transaction);
         } else {
             warn(
@@ -39,8 +40,8 @@ export const createReactivePlugin = ({ idAttrKey = "id", schema }: PluginArgs) =
 
     const store = new DocumentStore({
         nodeSpecs: schema.nodes,
+        invalidateNode,
         idAttrKey,
-        invalidateNodeId: dispatchNodeInvalidateTransaction,
     });
 
     const getDecorationSetForState = (editorState: EditorState, cycleId: any) => {
@@ -84,17 +85,17 @@ export const createReactivePlugin = ({ idAttrKey = "id", schema }: PluginArgs) =
             },
             apply: (transaction, pluginState: PluginState, _, editorState) => {
                 const cycleId = Date.now();
-                const invalidatedNodeId = getInvalidatedNodeId(transaction);
+                const invalidatedNode = getInvalidatedNode(transaction);
 
                 if (transaction.docChanged) {
                     return {
                         ...pluginState,
                         decorations: getDecorationSetForState(editorState, cycleId),
                     };
-                } else if (invalidatedNodeId) {
+                } else if (invalidatedNode) {
                     let decoration;
                     editorState.doc.descendants((node, offset) => {
-                        if (invalidatedNodeId === node.attrs[idAttrKey]) {
+                        if (store.compareNodesById(invalidatedNode, node)) {
                             decoration = createReactiveDecorationForNode(
                                 offset,
                                 offset + node.nodeSize,
@@ -115,4 +116,13 @@ export const createReactivePlugin = ({ idAttrKey = "id", schema }: PluginArgs) =
             },
         },
     });
+};
+
+export const getReactedCopyOfNode = (node: Node, editorState: EditorState): Node => {
+    const pluginState: PluginState = reactivePluginKey.getState(editorState);
+    if (pluginState) {
+        const { store } = pluginState;
+        return store.getReactedCopy(node);
+    }
+    return null;
 };

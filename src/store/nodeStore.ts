@@ -23,7 +23,6 @@ type DeferredAttrResults = Record<AttrKey, DeferredResult<ReactiveAttrValue>>;
  */
 export class NodeStore {
     private parentStore: DocumentStore;
-    private nodeId: NodeId;
     private reactiveCopy: Node;
     private attrStores: Record<AttrKey, AttrStore> = {};
     private attrStates: Record<AttrKey, ReactiveAttrValue> = {};
@@ -33,8 +32,7 @@ export class NodeStore {
      * @param definition a set of `Node` attributes associated with hooks that will be used to
      *   derive their values.
      */
-    constructor(nodeId: NodeId, definition: ReactiveAttrsDefinition, parentStore: DocumentStore) {
-        this.nodeId = nodeId;
+    constructor(definition: ReactiveAttrsDefinition, parentStore: DocumentStore) {
         this.parentStore = parentStore;
         this.invalidateAttr = this.invalidateAttr.bind(this);
         const entries = Object.entries(definition);
@@ -57,7 +55,7 @@ export class NodeStore {
                 : possiblyDeferredResult;
         const attrChanged = this.updateAttrState(attr, result);
         if (attrChanged) {
-            this.parentStore.onInvalidateNode(this.nodeId);
+            this.parentStore.onInvalidateNode(this.reactiveCopy);
         }
     }
 
