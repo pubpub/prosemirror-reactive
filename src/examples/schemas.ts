@@ -144,6 +144,24 @@ export const sheepCounter: ReactiveNodeSpec = {
 };
 
 export const sheepNamer: ReactiveNodeSpec = {
+    reactive: true,
+    attrs: {
+        id: { default: null },
+        sheepId: {},
+    },
+    reactiveAttrs: {
+        report: function(node) {
+            return this.useDeferredNode(node.attrs.sheepId, sheepNode => {
+                if (sheepNode) {
+                    return `My sheep is named ${sheepNode.attrs.name}`;
+                }
+                return "I don't see my sheep";
+            });
+        },
+    },
+};
+
+export const statefulSheepNamer: ReactiveNodeSpec = {
     reactiveAttrs: {
         report: function() {
             const { useState, useEffect, useDeferredNode } = this;
@@ -161,6 +179,26 @@ export const sheepNamer: ReactiveNodeSpec = {
                 return "I don't see any more sheep";
             });
         },
+    },
+};
+
+export const counter: ReactiveNodeSpec = {
+    reactive: true,
+    attrs: {
+        id: { default: null },
+    },
+    reactiveAttrs: {
+        count: function() {
+            const counterState = this.useTransactionState(["counter"], { count: 0 });
+            counterState.count++;
+            return counterState.count;
+        },
+    },
+};
+
+export const header: ReactiveNodeSpec = {
+    attrs: {
+        id: { default: null },
     },
 };
 

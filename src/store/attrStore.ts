@@ -43,7 +43,7 @@ const hookFactories = {
                 return this;
             }
             const contents: [T, StateUpdater<T>] = [
-                initialValue,
+                typeof initialValue === "function" ? initialValue() : initialValue,
                 arg => {
                     const currentValue = contents[0];
                     if (typeof arg === "function") {
@@ -198,7 +198,6 @@ export class AttrStore {
     private attr: string;
     private onInvalidate: OnInvalidate;
     private fn: ReactiveAttrFn;
-    private isRunning = false;
     private cells: Cell[] = [];
     private cellPointer = 0;
     private hooks: Hooks;
@@ -207,7 +206,6 @@ export class AttrStore {
     private weakSelf: WeakAttrStore;
 
     /**
-     *
      * @param attr The name of the attribute represented
      * @param fn The function which will be run to determine the attribute's value
      * @param globalHooks A set of globally-scoped hooks to provide to `fn`
@@ -223,11 +221,6 @@ export class AttrStore {
     }
 
     invalidate() {
-        if (this.isRunning) {
-            throwError(
-                "Hook invalidated while running (probably by updating a setState hook in your hook body)"
-            );
-        }
         this.onInvalidate(this.attr);
     }
 
@@ -267,9 +260,7 @@ export class AttrStore {
     run(node: Node): ReactiveAttrUpdateResult {
         this.runCallbacks = [];
         this.cellPointer = 0;
-        this.isRunning = true;
         const result = this.fn.call(this.hooks, node);
-        this.isRunning = false;
         if (this.cellPointer !== this.cells.length) {
             throwError("Hooks called conditionally");
         }

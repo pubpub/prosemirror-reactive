@@ -12,7 +12,7 @@ import { createReactiveNodeViews } from "./nodeViews";
 const createReactiveDecorationForNode = (from, to, cycleId, count) =>
     Decoration.node(from, to, {}, { "reactive-update": `${cycleId}-${count}` });
 
-export const createReactivePlugin = ({ idAttrKey, schema }: PluginArgs) => {
+export const createReactivePlugin = ({ idAttrKey, schema, documentState = {} }: PluginArgs) => {
     let editorView: EditorView = null;
 
     const getInvalidatedNode = (transaction: Transaction): Node => {
@@ -42,6 +42,7 @@ export const createReactivePlugin = ({ idAttrKey, schema }: PluginArgs) => {
         nodeSpecs: schema.nodes,
         invalidateNode,
         idAttrKey,
+        documentState,
     });
 
     const getDecorationSetForState = (editorState: EditorState, cycleId: any) => {
@@ -86,7 +87,6 @@ export const createReactivePlugin = ({ idAttrKey, schema }: PluginArgs) => {
             apply: (transaction, pluginState: PluginState, _, editorState) => {
                 const cycleId = Date.now();
                 const invalidatedNode = getInvalidatedNode(transaction);
-
                 if (transaction.docChanged) {
                     return {
                         ...pluginState,

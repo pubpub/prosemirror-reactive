@@ -1,4 +1,5 @@
 /* global it, expect, jest */
+import { Node } from "prosemirror-model";
 
 import {
     calculator,
@@ -11,9 +12,8 @@ import {
     boxOpener,
     sheep,
     sheepCounter,
-    sheepNamer,
+    statefulSheepNamer,
 } from "../../examples/schemas";
-import { Node } from "prosemirror-model";
 import { DocumentStore } from "../documentStore";
 import { NodeStore } from "../nodeStore";
 import { ReactiveNodeUpdate } from "../types";
@@ -29,7 +29,7 @@ const schema = createSchema({
     boxOpener,
     sheep,
     sheepCounter,
-    sheepNamer,
+    statefulSheepNamer,
 });
 
 const documentStore = new DocumentStore({ nodeSpecs: schema.nodes });
@@ -170,18 +170,18 @@ it("correctly invalidates nodes when their values change", () => {
     expect(sleepyStore.run(sleepy)[1].attrs.report).toEqual("I have counted 0 sheep");
 
     jest.advanceTimersByTime(1000);
-    expect(invalidate).toHaveBeenNthCalledWith(1, "awake");
+    // Only awake counts a sheep and is invalidated
+    expect(invalidate).toHaveBeenCalledTimes(1);
 
     jest.advanceTimersByTime(1000);
-    expect(invalidate).toHaveBeenNthCalledWith(2, "awake");
-    expect(invalidate).toHaveBeenNthCalledWith(3, "sleepy");
+    expect(invalidate).toHaveBeenCalledTimes(3);
 
     jest.advanceTimersByTime(1000);
-    expect(invalidate).toHaveBeenNthCalledWith(4, "awake");
+    // Only awake counts a sheep and is invalidated
+    expect(invalidate).toHaveBeenCalledTimes(4);
 
     jest.advanceTimersByTime(1000);
-    expect(invalidate).toHaveBeenNthCalledWith(5, "awake");
-    expect(invalidate).toHaveBeenNthCalledWith(6, "sleepy");
+    expect(invalidate).toHaveBeenCalledTimes(6);
 
     expect(awakeStore.getReactiveCopy().attrs.report).toEqual("I have counted 4 sheep");
     expect(sleepyStore.getReactiveCopy().attrs.report).toEqual("I have counted 2 sheep");
@@ -211,7 +211,7 @@ it("correctly invalidates nodes when their values change across a DeferredValue 
         availableNodes: { ...sheep },
     });
 
-    const namer = Node.fromJSON(schema, { type: "sheepNamer" });
+    const namer = Node.fromJSON(schema, { type: "statefulSheepNamer" });
     const store = createStore(namer, rs);
 
     const dr = store.run(namer) as DeferredResult<ReactiveNodeUpdate>;

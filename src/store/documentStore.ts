@@ -1,5 +1,7 @@
 import { NodeType, Node } from "prosemirror-model";
 
+import { DEFAULT_ID_ATTR_KEY } from "../constants";
+
 import {
     ReactiveNodeSpec,
     ReactiveAttrsDefinition,
@@ -22,13 +24,14 @@ interface ConstructorArgs {
     idAttrKey?: string;
     invalidateNode?: InvalidateNode;
     availableNodes?: Record<NodeId, Node>;
+    documentState?: Record<any, any>;
 }
 
 export class DocumentStore {
     private reactiveAttrsDefinitions: Record<AttrKey, ReactiveAttrsDefinition> = {};
     private nodeStores: Record<NodeId, NodeStore> = {};
     private availableNodes: Record<NodeId, Node>;
-    private documentState: ReactiveMap = new ReactiveMap();
+    private documentState: ReactiveMap;
     private transactionState: ReactiveMap;
     private idAttrKey: AttrKey;
     private invalidateNode: InvalidateNode;
@@ -50,10 +53,12 @@ export class DocumentStore {
 
     constructor({
         nodeSpecs,
-        idAttrKey = "id",
+        idAttrKey = DEFAULT_ID_ATTR_KEY,
         invalidateNode,
         availableNodes = {},
+        documentState = {},
     }: ConstructorArgs) {
+        this.documentState = new ReactiveMap(documentState);
         this.invalidateNode = invalidateNode;
         this.availableNodes = availableNodes;
         this.onInvalidateNode = this.onInvalidateNode.bind(this);
@@ -233,12 +238,12 @@ export class DocumentStore {
         this.availableNodes = availableNodesById;
 
         // Destroy the store for any reactive node that has disappeared from the doc.
-        // for (const storeId in this.nodeStores) {
-        //     if (!this.availableNodes[storeId]) {
-        //         this.nodeStores[storeId].destroy();
-        //         delete this.nodeStores[storeId];
-        //     }
-        // }
+        for (const storeId in this.nodeStores) {
+            if (!this.availableNodes[storeId]) {
+                this.nodeStores[storeId].destroy();
+                delete this.nodeStores[storeId];
+            }
+        }
 
         // Finally, tell the caller about every invalidated node we saw.
         const invalidationMap: RangeMap = {};

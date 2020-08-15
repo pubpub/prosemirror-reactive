@@ -74,8 +74,6 @@ it("runs an attr with a useState and a useEffect call", () => {
 });
 
 it("runs another attr that uses both useState and useEffect", () => {
-    const node = {} as Node;
-
     const attr = createTestStore(function() {
         const { useState, useEffect } = this;
         const [count, setCount] = useState(37);
@@ -87,15 +85,14 @@ it("runs another attr that uses both useState and useEffect", () => {
         return count;
     });
 
-    expect(attr.run(node)).toEqual(37);
+    expect(attr.run(testNode)).toEqual(37);
     jest.advanceTimersToNextTimer();
-    expect(attr.run(node)).toEqual(38);
+    expect(attr.run(testNode)).toEqual(38);
 });
 
 it("re-runs a useEffect hook only when its dependencies change", () => {
     const callbackFn = jest.fn();
     const teardownFn = jest.fn();
-    const node = {} as Node;
 
     let a = 1;
     let b = 5;
@@ -109,25 +106,25 @@ it("re-runs a useEffect hook only when its dependencies change", () => {
         return "";
     });
 
-    attr.run(node);
+    attr.run(testNode);
     expect(callbackFn).toHaveBeenCalledTimes(1);
     expect(teardownFn).toHaveBeenCalledTimes(0);
 
-    attr.run(node);
+    attr.run(testNode);
     expect(callbackFn).toHaveBeenCalledTimes(1);
     expect(teardownFn).toHaveBeenCalledTimes(0);
 
     a = 2;
-    attr.run(node);
+    attr.run(testNode);
     expect(callbackFn).toHaveBeenCalledTimes(2);
     expect(teardownFn).toHaveBeenCalledTimes(1);
 
-    attr.run(node);
+    attr.run(testNode);
     expect(callbackFn).toHaveBeenCalledTimes(2);
     expect(teardownFn).toHaveBeenCalledTimes(1);
 
     b = 6;
-    attr.run(node);
+    attr.run(testNode);
     expect(callbackFn).toHaveBeenCalledTimes(3);
     expect(teardownFn).toHaveBeenCalledTimes(2);
 });

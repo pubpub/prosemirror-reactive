@@ -1,0 +1,172 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getReactedDoc computes a reacted doc 1`] = `
+Object {
+  "content": Array [
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "1",
+            "report": "My sheep is named Shelly",
+            "sheepId": "sheep-3",
+          },
+          "type": "sheepNamer",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "sheep-1",
+            "name": "Shaun",
+          },
+          "type": "sheep",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "2",
+            "report": "My sheep is named Seamus",
+            "sheepId": "sheep-2",
+          },
+          "type": "sheepNamer",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "3",
+            "report": "I don't see my sheep",
+            "sheepId": "sheep-4",
+          },
+          "type": "sheepNamer",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "sheep-2",
+            "name": "Seamus",
+          },
+          "type": "sheep",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "sheep-3",
+            "name": "Shelly",
+          },
+          "type": "sheep",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "attrs": Object {
+            "id": "4",
+            "report": "My sheep is named Shaun",
+            "sheepId": "sheep-1",
+          },
+          "type": "sheepNamer",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  "type": "doc",
+}
+`;
+
+exports[`getReactedDoc computes another reacted doc 1`] = `
+Object {
+  "content": Array [
+    Object {
+      "attrs": Object {
+        "id": "5",
+      },
+      "content": Array [
+        Object {
+          "text": "Welcome to my document",
+          "type": "text",
+        },
+      ],
+      "type": "header",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "text": "Here is a bunch of stuff that isn't true",
+          "type": "text",
+        },
+        Object {
+          "attrs": Object {
+            "count": 1,
+            "id": "6",
+          },
+          "type": "counter",
+        },
+        Object {
+          "text": "But we do have citations for it!",
+          "type": "text",
+        },
+        Object {
+          "attrs": Object {
+            "count": 2,
+            "id": "7",
+          },
+          "type": "counter",
+        },
+      ],
+      "type": "paragraph",
+    },
+    Object {
+      "attrs": Object {
+        "id": "8",
+      },
+      "content": Array [
+        Object {
+          "text": "More stuff",
+          "type": "text",
+        },
+      ],
+      "type": "header",
+    },
+    Object {
+      "content": Array [
+        Object {
+          "text": "Here is some more stuff",
+          "type": "text",
+        },
+        Object {
+          "attrs": Object {
+            "count": 3,
+            "id": "9",
+          },
+          "type": "counter",
+        },
+      ],
+      "type": "paragraph",
+    },
+  ],
+  "type": "doc",
+}
+`;
