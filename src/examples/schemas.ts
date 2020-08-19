@@ -116,6 +116,8 @@ export const boxOpener: ReactiveNodeSpec = {
 };
 
 export const sheep: ReactiveNodeSpec = {
+    inline: true,
+    group: "inline",
     attrs: {
         id: {},
         name: {},
@@ -145,6 +147,8 @@ export const sheepCounter: ReactiveNodeSpec = {
 
 export const sheepNamer: ReactiveNodeSpec = {
     reactive: true,
+    inline: true,
+    group: "inline",
     attrs: {
         id: { default: null },
         sheepId: {},
@@ -183,6 +187,8 @@ export const statefulSheepNamer: ReactiveNodeSpec = {
 };
 
 export const counter: ReactiveNodeSpec = {
+    inline: true,
+    group: "inline",
     reactive: true,
     attrs: {
         id: { default: null },
@@ -197,6 +203,8 @@ export const counter: ReactiveNodeSpec = {
 };
 
 export const header: ReactiveNodeSpec = {
+    group: "block",
+    content: "inline*",
     attrs: {
         id: { default: null },
     },
