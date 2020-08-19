@@ -170,9 +170,11 @@ export class DocumentStore {
         // Touch every node in the document and note the position we saw it at.
         const seenNodesById: Record<NodeId, Node> = {};
         const seenNodeRangesById: RangeMap = {};
-        document.descendants((node: Node, pos: number) => {
+        const seenNodeIds: NodeId[] = [];
+        document.nodesBetween(0, document.nodeSize - 2, (node: Node, pos: number) => {
             const { [this.idAttrKey]: id } = node.attrs;
             if (id) {
+                seenNodeIds.push(id);
                 seenNodesById[id] = node;
                 seenNodeRangesById[id] = [pos, pos + node.nodeSize];
             }
@@ -188,7 +190,8 @@ export class DocumentStore {
         const availableNodesById: Record<NodeId, Node> = {};
         // Record all notes that are invalidated and need to be redrawn.
         const invalidatedNodeIds = [];
-        for (const id in seenNodesById) {
+        for (let i = 0; i < seenNodeIds.length; i++) {
+            const id = seenNodeIds[i];
             const node = seenNodesById[id];
             const store = this.getStoreForNode(node);
             if (store) {
