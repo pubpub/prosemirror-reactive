@@ -1,6 +1,6 @@
 {
   "name": "@pubpub/prosemirror-reactive",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Use reactive, stateful nodes in Prosemirror",
   "main": "dist/index.js",
   "devDependencies": {
@@ -25,8 +25,7 @@
     "test": "jest",
     "build": "tsc",
     "lint": "eslint 'src/**/*.ts'",
-    "prepublishOnly": "npm run lint && npm test && npm run build",
-    "convert": "ts-node src/example/convert.ts"
+    "prepublishOnly": "npm run lint && npm test && npm run build"
   },
   "repository": {
     "type": "git",
