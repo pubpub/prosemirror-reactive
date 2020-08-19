@@ -1,34 +1,9 @@
-import { DOMSerializer, Schema, Node, NodeSpec } from "prosemirror-model";
+import { DOMSerializer, Schema, Node } from "prosemirror-model";
 import { EditorView, Decoration, NodeView } from "prosemirror-view";
 
 import { DocumentStore } from "../store/documentStore";
 
 type NodeViewArgs = [Node, EditorView, boolean | (() => number), Decoration[]];
-
-class ReactiveNodeView {
-    private store: DocumentStore;
-    private spec: NodeSpec;
-    dom: any;
-    contentDOM: any;
-
-    constructor(initialNode: Node, spec: NodeSpec, store: DocumentStore) {
-        this.store = store;
-        this.spec = spec;
-        this.render(initialNode);
-    }
-
-    private render(node: Node) {
-        const reactedNode = this.store.getReactedCopy(node);
-        const outputSpec = this.spec.toDOM(reactedNode || node);
-        const { dom, contentDOM } = DOMSerializer.renderSpec(document, outputSpec);
-        this.dom = dom;
-        this.contentDOM = contentDOM;
-    }
-
-    update() {
-        return false;
-    }
-}
 
 const reactiveNodeView = (
     store: DocumentStore,
