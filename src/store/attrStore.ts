@@ -2,6 +2,7 @@ import { Node } from "prosemirror-model";
 
 import { ReactiveAttrFn, ReactiveAttrUpdateResult, Hooks } from "./types";
 import { warn, throwError } from "./util";
+import { DocumentHooks } from "./documentStore";
 
 type UninitializedCell = [];
 type Cell = UninitializedCell | [number, any[]];
@@ -12,6 +13,18 @@ type Ref = { current: any };
 type StateUpdater<T> = (arg: T | ((curr: T) => T)) => void;
 type EffectCallback = () => () => any;
 type OnInvalidate = (attr: string) => void;
+
+type HookFactories = typeof hookFactories;
+type HookName = keyof HookFactories;
+type UseState = ReturnType<HookFactories["useState"]>;
+
+type OmitThisParameterFromHook<T> = T extends <A>(this: State<A>, a0: A) => [A, StateUpdater<A>]
+    ? <A>(a0: A) => [A, StateUpdater<A>]
+    : OmitThisParameter<T>;
+
+export type AttrHooks = {
+    [n in HookName]: OmitThisParameterFromHook<ReturnType<HookFactories[n]>>;
+};
 
 const noopInvalidate = () => {
     warn(
@@ -102,14 +115,14 @@ const hookFactories = {
     },
 };
 
-const hookEntries: [string, Function][] = Object.entries(hookFactories);
-const hookIds: Record<string, number> = {};
+const hookEntries = Object.entries(hookFactories);
+const hookIds = {};
 
 hookEntries.forEach(([name], index) => {
     hookIds[name] = index;
 });
 
-const bindHook = (store: WeakAttrStore, hookName: string, hookFactory: Function) => {
+const bindHook = (store: WeakAttrStore, hookName: HookName, hookFactory: Function) => {
     const hook = hookFactory(store);
     return (...args) => {
         const cell = store.getCurrentCell();
@@ -133,13 +146,13 @@ const bindHook = (store: WeakAttrStore, hookName: string, hookFactory: Function)
     };
 };
 
-const getBoundHooks = (store: WeakAttrStore) => {
+const getBoundAttrHooks = (store: WeakAttrStore): AttrHooks => {
     const boundHooks: Record<string, Function> = {};
     for (let i = 0; i < hookEntries.length; i++) {
         const [hookName, hookFn] = hookEntries[i];
-        boundHooks[hookName] = bindHook(store, hookName, hookFn);
+        boundHooks[hookName] = bindHook(store, hookName as HookName, hookFn);
     }
-    return boundHooks;
+    return boundHooks as AttrHooks;
 };
 
 /**
@@ -212,12 +225,17 @@ export class AttrStore {
      * @param onInvalidate Callback for when a hook (cough cough, `useState`)
      *  invalidates this store's value
      */
-    constructor(attr: string, fn: ReactiveAttrFn, globalHooks: Hooks, onInvalidate: OnInvalidate) {
+    constructor(
+        attr: string,
+        fn: ReactiveAttrFn,
+        documentHooks: DocumentHooks,
+        onInvalidate: OnInvalidate
+    ) {
         this.attr = attr;
         this.fn = fn;
         this.onInvalidate = onInvalidate || noopInvalidate;
         this.weakSelf = new WeakAttrStore(this);
-        this.hooks = { ...getBoundHooks(this.weakSelf), ...globalHooks };
+        this.hooks = { ...getBoundAttrHooks(this.weakSelf), ...documentHooks };
     }
 
     invalidate() {
@@ -260,7 +278,7 @@ export class AttrStore {
     run(node: Node): ReactiveAttrUpdateResult {
         this.runCallbacks = [];
         this.cellPointer = 0;
-        const result = this.fn.call(this.hooks, node);
+        const result = this.fn(node, this.hooks);
         if (this.cellPointer !== this.cells.length) {
             throwError("Hooks called conditionally");
         }

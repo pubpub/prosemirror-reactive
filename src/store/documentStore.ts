@@ -7,7 +7,6 @@ import {
     ReactiveAttrsDefinition,
     NodeId,
     ReactiveNodeUpdate,
-    Hooks,
     AttrKey,
 } from "./types";
 import { ReactiveMap } from "./reactiveMap";
@@ -18,6 +17,7 @@ import { assertCanCreateReactiveNodeStore } from "./util";
 type Range = [number, number];
 type RangeMap = Record<NodeId, Range>;
 type InvalidateNode = (node: Node) => void;
+export type DocumentHooks = ReturnType<DocumentStore["getHooks"]>;
 
 interface ConstructorArgs {
     nodeSpecs: Record<string, NodeType>;
@@ -37,9 +37,11 @@ export class DocumentStore {
     private invalidateNode: InvalidateNode;
 
     private hooks = {
-        useDocumentState: (...args) => this.documentState.get(...args),
-        useTransactionState: (...args) => this.transactionState.get(...args),
-        useDeferredNode: (nodeIds, callback) =>
+        useDocumentState: (...args: Parameters<ReactiveMap["get"]>) =>
+            this.documentState.get(...args),
+        useTransactionState: (...args: Parameters<ReactiveMap["get"]>) =>
+            this.transactionState.get(...args),
+        useDeferredNode: (nodeIds: NodeId | NodeId[], callback: (...nodes: Node[]) => any) =>
             new DeferredResult(nodeIds, (nodesById: Record<NodeId, Node>) => {
                 const resolvedNodes = [];
                 if (Array.isArray(nodeIds)) {
@@ -135,7 +137,7 @@ export class DocumentStore {
     /**
      * Get the hooks provided by the reactive store.
      */
-    getHooks(): Hooks {
+    getHooks() {
         return this.hooks;
     }
 

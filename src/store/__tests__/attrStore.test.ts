@@ -3,6 +3,7 @@ import { Node } from "prosemirror-model";
 
 import { createSchema, greeter } from "../../examples/schemas";
 import { AttrStore } from "../attrStore";
+import { Hooks } from "../types";
 
 jest.useFakeTimers();
 
@@ -11,7 +12,7 @@ const schema = createSchema({ greeter });
 const testNode = Node.fromJSON(schema, { type: "greeter", attrs: { name: "world" } });
 
 const createTestStore = (fn, globalHooks = {}, onInvalidate?) =>
-    new AttrStore("anything", fn, globalHooks, onInvalidate);
+    new AttrStore("anything", fn, globalHooks as Hooks, onInvalidate);
 
 it("runs an attr that can access the current Node value", () => {
     const attr = createTestStore(function stateCell(node) {
@@ -23,8 +24,8 @@ it("runs an attr that can access the current Node value", () => {
 
 it("runs an attr that can access the current global hooks", () => {
     const attr = createTestStore(
-        function stateCell() {
-            return this.use3();
+        function stateCell(_, hooks) {
+            return hooks.use3();
         },
         { use3: () => 3 }
     );
@@ -33,8 +34,8 @@ it("runs an attr that can access the current global hooks", () => {
 });
 
 it("runs an attr with a useState call", () => {
-    const attr = createTestStore(function stateCell() {
-        const { useState } = this;
+    const attr = createTestStore(function stateCell(_, hooks) {
+        const { useState } = hooks;
         const [someState] = useState("hello!");
         return someState;
     });
@@ -43,8 +44,8 @@ it("runs an attr with a useState call", () => {
 });
 
 it("runs an attr with a useRef call", () => {
-    const attr = createTestStore(function stateCell() {
-        const { useRef } = this;
+    const attr = createTestStore(function stateCell(_, hooks) {
+        const { useRef } = hooks;
         const count = useRef(-1);
         count.current += 1;
         return count.current;
@@ -57,8 +58,8 @@ it("runs an attr with a useRef call", () => {
 });
 
 it("runs an attr with a useState and a useEffect call", () => {
-    const attr = createTestStore(function stateCell() {
-        const { useState, useEffect } = this;
+    const attr = createTestStore(function stateCell(_, hooks) {
+        const { useState, useEffect } = hooks;
         const [count, setCount] = useState(0);
 
         // In a DocumentStore this would trigger an infinite loop
@@ -74,8 +75,8 @@ it("runs an attr with a useState and a useEffect call", () => {
 });
 
 it("runs another attr that uses both useState and useEffect", () => {
-    const attr = createTestStore(function() {
-        const { useState, useEffect } = this;
+    const attr = createTestStore((_, hooks) => {
+        const { useState, useEffect } = hooks;
         const [count, setCount] = useState(37);
 
         useEffect(() => {
@@ -97,8 +98,8 @@ it("re-runs a useEffect hook only when its dependencies change", () => {
     let a = 1;
     let b = 5;
 
-    const attr = createTestStore(function() {
-        const { useEffect } = this;
+    const attr = createTestStore((_, hooks) => {
+        const { useEffect } = hooks;
         useEffect(() => {
             callbackFn();
             return teardownFn;
@@ -135,8 +136,8 @@ it("tears down a useEffect hook as expected", () => {
 
     let useFirstTeardown = true;
 
-    const attr = createTestStore(function() {
-        const { useEffect } = this;
+    const attr = createTestStore((_, hooks) => {
+        const { useEffect } = hooks;
         useEffect(() => {
             return useFirstTeardown ? firstTeardown : secondTeardown;
         });
@@ -163,8 +164,8 @@ it("invalidates when its state changes", () => {
     const invalidator = jest.fn();
 
     const attr = createTestStore(
-        function() {
-            const { useEffect, useState } = this;
+        (_, hooks) => {
+            const { useEffect, useState } = hooks;
             const [ready, setReady] = useState(false);
 
             useEffect(() => {
@@ -186,8 +187,8 @@ it("does not invalidate when setState is called, but does not change the state",
     const invalidator = jest.fn();
 
     const attr = createTestStore(
-        function() {
-            const { useEffect, useState } = this;
+        (_, hooks) => {
+            const { useEffect, useState } = hooks;
             const [ready, setReady] = useState(false);
 
             useEffect(() => {
@@ -209,8 +210,8 @@ it("does not invalidate after it has been destroyed", () => {
     const invalidator = jest.fn();
 
     const attr = createTestStore(
-        function() {
-            const { useEffect, useState } = this;
+        (_, hooks) => {
+            const { useEffect, useState } = hooks;
             const [ready, setReady] = useState(false);
 
             useEffect(() => {

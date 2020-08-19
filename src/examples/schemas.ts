@@ -20,7 +20,7 @@ export const greeter: ReactiveNodeSpec = {
         name: {},
     },
     reactiveAttrs: {
-        greeting: function(node) {
+        greeting: node => {
             return `Hello, ${node.attrs.name}!`;
         },
     },
@@ -32,10 +32,10 @@ export const calculator: ReactiveNodeSpec = {
         y: {},
     },
     reactiveAttrs: {
-        sum: function({ attrs }) {
+        sum: ({ attrs }) => {
             return attrs.x + attrs.y;
         },
-        product: function({ attrs }) {
+        product: ({ attrs }) => {
             return attrs.x * attrs.y;
         },
     },
@@ -47,10 +47,10 @@ export const concatenator: ReactiveNodeSpec = {
         b: {},
     },
     reactiveAttrs: {
-        ab: function({ attrs }) {
+        ab: ({ attrs }) => {
             return attrs.a + attrs.b;
         },
-        ba: function({ attrs }) {
+        ba: ({ attrs }) => {
             return attrs.b + attrs.a;
         },
     },
@@ -69,8 +69,7 @@ export const feedMe: ReactiveNodeSpec = {
     },
 
     reactiveAttrs: {
-        report: function({ attrs }) {
-            const { useDeferredNode } = this;
+        report: ({ attrs }, { useDeferredNode }) => {
             return useDeferredNode(attrs.wantsToEatId, food => `yum, ${food.attrs.color}!`);
         },
     },
@@ -82,9 +81,8 @@ export const feedMeMore: ReactiveNodeSpec = {
     },
 
     reactiveAttrs: {
-        report: function({ attrs }) {
-            const { useDeferredNode } = this;
-            return useDeferredNode(
+        report: ({ attrs }, hooks) => {
+            return hooks.useDeferredNode(
                 attrs.wantsToEatIds,
                 (first, second) => `yum, ${first.attrs.color} and ${second.attrs.color}!`
             );
@@ -105,11 +103,11 @@ export const boxOpener: ReactiveNodeSpec = {
         lookForBoxId: {},
     },
     reactiveAttrs: {
-        myValue: function(node) {
+        myValue: node => {
             return node.attrs.value;
         },
-        boxValue: function(node) {
-            const { useDeferredNode } = this;
+        boxValue: (node, hooks) => {
+            const { useDeferredNode } = hooks;
             return useDeferredNode(node.attrs.lookForBoxId, box => box.attrs.value);
         },
     },
@@ -131,8 +129,8 @@ export const sheepCounter: ReactiveNodeSpec = {
     },
 
     reactiveAttrs: {
-        report: function(node) {
-            const { useState, useEffect } = this;
+        report: (node, hooks) => {
+            const { useState, useEffect } = hooks;
             const [sheepCount, setSheepCount] = useState(0);
 
             useEffect(() => {
@@ -154,8 +152,8 @@ export const sheepNamer: ReactiveNodeSpec = {
         sheepId: {},
     },
     reactiveAttrs: {
-        report: function(node) {
-            return this.useDeferredNode(node.attrs.sheepId, sheepNode => {
+        report: (node, hooks) => {
+            return hooks.useDeferredNode(node.attrs.sheepId, sheepNode => {
                 if (sheepNode) {
                     return `My sheep is named ${sheepNode.attrs.name}`;
                 }
@@ -167,8 +165,8 @@ export const sheepNamer: ReactiveNodeSpec = {
 
 export const statefulSheepNamer: ReactiveNodeSpec = {
     reactiveAttrs: {
-        report: function() {
-            const { useState, useEffect, useDeferredNode } = this;
+        report: (_, hooks) => {
+            const { useState, useEffect, useDeferredNode } = hooks;
             const [sheepIndex, setSheepIndex] = useState(0);
 
             useEffect(() => {
@@ -194,8 +192,8 @@ export const counter: ReactiveNodeSpec = {
         id: { default: null },
     },
     reactiveAttrs: {
-        count: function() {
-            const counterState = this.useTransactionState(["counter"], { count: 0 });
+        count: (_, hooks) => {
+            const counterState = hooks.useTransactionState(["counter"], { count: 0 });
             counterState.count++;
             return counterState.count;
         },
