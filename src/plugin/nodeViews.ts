@@ -11,9 +11,9 @@ const reactiveNodeView = (
 ) => {
     return (...args: NodeViewArgs) => {
         const [node, ...restArgs] = args;
-        const reactedNode = store.getReactedCopy(node);
+        const possiblyReactedNode = store.getReactedCopy(node) || node;
         if (delegateView) {
-            const delegate = delegateView(reactedNode, ...restArgs);
+            const delegate = delegateView(possiblyReactedNode, ...restArgs);
             const { update } = delegate;
             // Call the update function to make sure any expected side effects are run,
             // but throw away the result and return false so the node will definitely
@@ -28,7 +28,7 @@ const reactiveNodeView = (
             });
             return delegate;
         }
-        const outputSpec = node.type.spec.toDOM(reactedNode || node);
+        const outputSpec = node.type.spec.toDOM(possiblyReactedNode);
         const { dom, contentDOM } = DOMSerializer.renderSpec(document, outputSpec);
         return {
             dom,
