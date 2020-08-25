@@ -18,7 +18,7 @@ export const mapDoc = (doc: Node, onNode: OnNode): Node => {
                 content.push(child);
             }
         }
-        const copy = schema.node(node.type, node.attrs, content);
+        const copy = node.type.create(node.attrs, content);
         return onNode(copy);
     };
 
