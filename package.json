@@ -1,6 +1,6 @@
 {
   "name": "@pubpub/prosemirror-reactive",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Use reactive, stateful nodes in Prosemirror",
   "main": "dist/index.js",
   "devDependencies": {
