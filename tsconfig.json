@@ -3,9 +3,11 @@
         "allowJs": true,
         "downlevelIteration": true,
         "esModuleInterop": true,
+        "declaration": true,
+        "declarationMap": true,
         "outDir": "dist",
-        "lib": ["es6", "dom"],
+        "lib": ["es6", "dom"]
     },
     "include": ["./**/*.ts"],
-    "exclude": ["node_modules"]
+    "exclude": ["node_modules", "dist"]
 }
