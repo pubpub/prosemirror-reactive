@@ -45,9 +45,9 @@ export const createReactivePlugin = ({ idAttrKey, schema, documentState = {} }: 
         documentState,
     });
 
-    const getDecorationSetForState = (editorState: EditorState, cycleId: any) => {
+    const getDecorationSetForDoc = (doc: Node, cycleId: any) => {
         const decorations = [];
-        const invalidatedRanges = store.run(editorState.doc);
+        const invalidatedRanges = store.run(doc);
         for (const invalidatedId in invalidatedRanges) {
             const [from, to] = invalidatedRanges[invalidatedId];
             const decoration = createReactiveDecorationForNode(
@@ -58,7 +58,7 @@ export const createReactivePlugin = ({ idAttrKey, schema, documentState = {} }: 
             );
             decorations.push(decoration);
         }
-        return DecorationSet.create(editorState.doc, decorations);
+        return DecorationSet.create(doc, decorations);
     };
 
     return new Plugin({
@@ -84,16 +84,16 @@ export const createReactivePlugin = ({ idAttrKey, schema, documentState = {} }: 
             init: (_, editorState): PluginState => {
                 return {
                     store: store,
-                    decorations: getDecorationSetForState(editorState, Date.now()),
+                    decorations: getDecorationSetForDoc(editorState.doc, Date.now()),
                 };
             },
-            apply: (transaction, pluginState: PluginState, _, editorState) => {
+            apply: (transaction, pluginState: PluginState, editorState: EditorState) => {
                 const cycleId = Date.now();
                 const invalidatedNode = getInvalidatedNode(transaction);
                 if (transaction.docChanged) {
                     return {
                         ...pluginState,
-                        decorations: getDecorationSetForState(editorState, cycleId),
+                        decorations: getDecorationSetForDoc(transaction.doc, cycleId),
                     };
                 } else if (invalidatedNode) {
                     let decoration;
