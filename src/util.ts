@@ -25,7 +25,7 @@ export const mapDoc = (doc: Node, onNode: OnNode): Node => {
     return innerMap(doc);
 };
 
-const defaultIdGenerator = () => Math.round(Math.random() * 1e10).toString();
+const defaultIdGenerator = () => `r${Math.round(Math.random() * 1e10).toString()}`;
 
 export const addTemporaryIdsToDoc = (
     doc: Node,
