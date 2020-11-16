@@ -67,7 +67,10 @@ export const createReactivePlugin = ({ idAttrKey, schema, documentState = {} }: 
             editorView = view;
             editorView.update({
                 ...view.props,
-                nodeViews: createReactiveNodeViews(view, schema, store),
+                nodeViews: {
+                    ...view.props.nodeViews,
+                    ...createReactiveNodeViews(view, schema, store),
+                },
             });
             return {
                 update: nextView => {

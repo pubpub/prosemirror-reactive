@@ -15,13 +15,14 @@ const reactiveNodeView = (
         if (delegateView) {
             const delegate = delegateView(possiblyReactedNode, ...restArgs);
             const { update } = delegate;
+            const boundUpdate = update && update.bind(delegate);
             // Call the update function to make sure any expected side effects are run,
             // but throw away the result and return false so the node will definitely
             // continue to update reactively
             Object.assign(delegate, {
                 update: (node, decorations) => {
-                    if (typeof update === "function") {
-                        update(node, decorations);
+                    if (typeof boundUpdate === "function") {
+                        boundUpdate(node, decorations);
                     }
                     return false;
                 },
@@ -38,15 +39,27 @@ const reactiveNodeView = (
     };
 };
 
+const collectNodeViews = (view: EditorView) => {
+    const result: Record<string, any> = {};
+    view.someProp("nodeViews", obj => {
+        for (const prop in obj) {
+            if (!Object.prototype.hasOwnProperty.call(result, prop)) {
+                result[prop] = obj[prop];
+            }
+        }
+    });
+    return result;
+};
+
 export const createReactiveNodeViews = (view: EditorView, schema: Schema, store: DocumentStore) => {
-    const views = {};
+    const reactiveViews = {};
+    const existingViews = collectNodeViews(view);
     Object.values(schema.nodes).forEach(nodeType => {
         const { name, spec } = nodeType;
         if (spec.reactive) {
-            const { nodeViews = {} } = view.props;
-            const delegateView = nodeViews[name];
-            views[name] = reactiveNodeView(store, delegateView);
+            const delegateView = existingViews[name];
+            reactiveViews[name] = reactiveNodeView(store, delegateView);
         }
     });
-    return views;
+    return reactiveViews;
 };
