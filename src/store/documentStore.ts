@@ -126,7 +126,11 @@ export class DocumentStore {
         if (node.attrs) {
             const { [this.idAttrKey]: nodeId } = node.attrs;
             if (this.nodeStores[nodeId]) {
-                return this.availableNodes[nodeId];
+                const reactedCopy = this.availableNodes[nodeId];
+                if (node.content) {
+                    return reactedCopy.copy(node.content);
+                }
+                return reactedCopy;
             }
         }
         return null;
