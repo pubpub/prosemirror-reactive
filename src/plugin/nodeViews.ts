@@ -19,7 +19,8 @@ const reactiveNodeView = (
             Object.assign(delegate, {
                 update: (node, decorations) => {
                     if (typeof boundUpdate === "function") {
-                        return boundUpdate(node, decorations);
+                        const latestReactiveCopy = store.getReactedCopy(node) || node;
+                        return boundUpdate(latestReactiveCopy, decorations);
                     }
                     return false;
                 },
