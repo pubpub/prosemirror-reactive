@@ -16,9 +16,6 @@ const reactiveNodeView = (
             const delegate = delegateView(possiblyReactedNode, ...restArgs);
             const { update } = delegate;
             const boundUpdate = update && update.bind(delegate);
-            // Call the update function to make sure any expected side effects are run,
-            // but throw away the result and return false so the node will definitely
-            // continue to update reactively
             Object.assign(delegate, {
                 update: (node, decorations) => {
                     if (typeof boundUpdate === "function") {
