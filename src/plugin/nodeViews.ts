@@ -5,8 +5,6 @@ import { DocumentStore } from "../store/documentStore";
 
 type NodeViewArgs = [Node, EditorView, boolean | (() => number), Decoration[]];
 
-console.log("honk honk");
-
 const reactiveNodeView = (
     store: DocumentStore,
     delegateView: (...args: NodeViewArgs) => NodeView
@@ -24,7 +22,7 @@ const reactiveNodeView = (
             Object.assign(delegate, {
                 update: (node, decorations) => {
                     if (typeof boundUpdate === "function") {
-                        boundUpdate(node, decorations);
+                        return boundUpdate(node, decorations);
                     }
                     return false;
                 },

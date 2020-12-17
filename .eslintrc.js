@@ -35,6 +35,7 @@ module.exports = {
         "@typescript-eslint/no-inferrable-types": 0,
         "@typescript-eslint/no-use-before-define": 0,
         "no-constant-condition": 0,
+        "no-console": "error",
         "prettier/prettier": "error",
     },
 };
