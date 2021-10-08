@@ -1,9 +1,6 @@
 type State = Record<any, any>;
 type Key = string | symbol;
 
-type UpdateStateCallback = (s: State) => State;
-type UpdateState = (arg: State | UpdateStateCallback) => void;
-
 export class ReactiveMap {
     state: Record<any, any>;
     private childMaps: Map<Key, ReactiveMap>;
