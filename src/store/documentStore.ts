@@ -7,8 +7,8 @@ import {
     ReactiveAttrsDefinition,
     NodeId,
     ReactiveNodeUpdate,
-    Hooks,
     AttrKey,
+    DocumentHooks,
 } from "./types";
 import { ReactiveMap } from "./reactiveMap";
 import { NodeStore } from "./nodeStore";
@@ -36,7 +36,7 @@ export class DocumentStore {
     private idAttrKey: AttrKey;
     private invalidateNode: InvalidateNode;
 
-    private hooks = {
+    private hooks: DocumentHooks = {
         useDocumentState: (...args) => this.documentState.get(...args),
         useTransactionState: (...args) => this.transactionState.get(...args),
         useDeferredNode: (nodeIds, callback) =>
@@ -139,7 +139,7 @@ export class DocumentStore {
     /**
      * Get the hooks provided by the reactive store.
      */
-    getHooks(): Hooks {
+    getHooks(): DocumentHooks {
         return this.hooks;
     }
 

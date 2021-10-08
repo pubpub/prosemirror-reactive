@@ -32,6 +32,7 @@ module.exports = {
         "@typescript-eslint/no-empty-function": 0,
         "@typescript-eslint/no-explicit-any": 0,
         "@typescript-eslint/no-unused-vars": ["error", { "varsIgnorePattern": "^_+$" }],
+        "@typescript-eslint/no-use-before-define": 0,
         "@typescript-eslint/no-inferrable-types": 0,
         "@typescript-eslint/no-use-before-define": 0,
         "no-constant-condition": 0,

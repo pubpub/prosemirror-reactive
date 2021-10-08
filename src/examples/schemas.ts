@@ -1,5 +1,7 @@
-import { ReactiveNodeSpec } from "../store/types";
 import { Schema } from "prosemirror-model";
+
+import { ReactiveNodeSpec } from "../store/types";
+import { useDeferredNode, useState, useEffect, useTransactionState } from "..";
 
 const doc: ReactiveNodeSpec = {
     content: "block+",
@@ -70,7 +72,6 @@ export const feedMe: ReactiveNodeSpec = {
 
     reactiveAttrs: {
         report: function({ attrs }) {
-            const { useDeferredNode } = this;
             return useDeferredNode(attrs.wantsToEatId, food => `yum, ${food.attrs.color}!`);
         },
     },
@@ -83,7 +84,6 @@ export const feedMeMore: ReactiveNodeSpec = {
 
     reactiveAttrs: {
         report: function({ attrs }) {
-            const { useDeferredNode } = this;
             return useDeferredNode(
                 attrs.wantsToEatIds,
                 (first, second) => `yum, ${first.attrs.color} and ${second.attrs.color}!`
@@ -109,7 +109,6 @@ export const boxOpener: ReactiveNodeSpec = {
             return node.attrs.value;
         },
         boxValue: function(node) {
-            const { useDeferredNode } = this;
             return useDeferredNode(node.attrs.lookForBoxId, box => box.attrs.value);
         },
     },
@@ -132,7 +131,6 @@ export const sheepCounter: ReactiveNodeSpec = {
 
     reactiveAttrs: {
         report: function(node) {
-            const { useState, useEffect } = this;
             const [sheepCount, setSheepCount] = useState(0);
 
             useEffect(() => {
@@ -155,7 +153,7 @@ export const sheepNamer: ReactiveNodeSpec = {
     },
     reactiveAttrs: {
         report: function(node) {
-            return this.useDeferredNode(node.attrs.sheepId, sheepNode => {
+            return useDeferredNode(node.attrs.sheepId, sheepNode => {
                 if (sheepNode) {
                     return `My sheep is named ${sheepNode.attrs.name}`;
                 }
@@ -168,7 +166,6 @@ export const sheepNamer: ReactiveNodeSpec = {
 export const statefulSheepNamer: ReactiveNodeSpec = {
     reactiveAttrs: {
         report: function() {
-            const { useState, useEffect, useDeferredNode } = this;
             const [sheepIndex, setSheepIndex] = useState(0);
 
             useEffect(() => {
@@ -195,7 +192,7 @@ export const counter: ReactiveNodeSpec = {
     },
     reactiveAttrs: {
         count: function() {
-            const counterState = this.useTransactionState(["counter"], { count: 0 });
+            const counterState = useTransactionState(["counter"], { count: 0 });
             counterState.count++;
             return counterState.count;
         },
